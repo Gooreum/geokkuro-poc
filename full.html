@@ -154,6 +154,20 @@
 
 <script type="module">
 import * as P from './protocol.mjs';
+// 한국어 음성으로 읽는다. lang 을 안 주면 영어 음성이 한글을 읽거나 소리가 안 난다.
+function speakKo(text) {
+  const ss = globalThis.speechSynthesis;
+  if (!ss) return false;
+  ss.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ko-KR';
+  u.rate = 0.95;
+  const ko = ss.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith('ko'));
+  if (ko) u.voice = ko;
+  ss.speak(u);
+  return true;
+}
+globalThis.speechSynthesis?.getVoices(); // 일부 브라우저는 목록을 미리 불러와야 한다
 
 const $ = (id) => document.getElementById(id);
 const ALG = { name: 'ECDSA', namedCurve: 'P-256' };
@@ -189,7 +203,8 @@ let current = '';
 let issuedAt = 0;
 function drawQR(token) {
   const qr = qrcode(0, 'L');
-  qr.addData(`${CHECK_URL}#${token}`, 'Byte');
+  // QR 마다 주소(?q=)를 다르게 해서 폰이 찍을 때마다 결과 페이지를 새로 연다
+  qr.addData(`${CHECK_URL}?q=${token.slice(-8)}#${token}`, 'Byte');
   qr.make();
   $('qr').src = qr.createDataURL(4, 8);
 }
@@ -239,7 +254,7 @@ function show(r) {
     ? `더 확인하려면 기관 대표번호 <b>${r.info.officeTel}</b>로 직접 전화하세요. (상대가 알려 준 번호 말고)`
     : '돈·카드·앱 설치 요구에 응하지 마세요. <b>112</b>에 바로 신고할 수 있습니다.';
   $('btn-say').style.display = 'block';
-  $('btn-say').onclick = () => speechSynthesis.speak(new SpeechSynthesisUtterance(`${$('r-big').textContent}. ${r.message}`));
+  $('btn-say').onclick = () => speakKo(`${$('r-big').textContent}. ${r.message}`);
 }
 const revokedNow = () => new Set([...revoked, `${ISS_ID}:${oldEmp.id}`]);
 
@@ -255,7 +270,7 @@ $('btn-code').onclick = async () => {
 $('btn-lookup').onclick = () => show(server.lookup($('code-in').value.trim(), 'this-citizen'));
 
 // 자동 시험용
-window.__demo = { url: () => `${CHECK_URL}#${current}`, mode: (m) => $(`m-${m}`).click() };
+window.__demo = { url: () => `${CHECK_URL}?q=${current.slice(-8)}#${current}`, mode: (m) => $(`m-${m}`).click() };
 </script>
 </body>
 </html>

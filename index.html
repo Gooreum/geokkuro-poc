@@ -161,10 +161,11 @@ let issuedAt = 0;
 
 function draw(token) {
   const qr = qrcode(0, 'L');
-  qr.addData(`${CHECK_URL}#${token}`, 'Byte');
+  // QR 마다 주소(?q=)를 다르게 해서 폰이 찍을 때마다 결과 페이지를 새로 연다
+  qr.addData(`${CHECK_URL}?q=${token.slice(-8)}#${token}`, 'Byte');
   qr.make();
   $('qr').src = qr.createDataURL(5, 8);
-  $('here').href = `${CHECK_URL}#${token}`;
+  $('here').href = `${CHECK_URL}?q=${token.slice(-8)}#${token}`;
 }
 async function refresh() {
   issuedAt = P.nowSec();
@@ -197,7 +198,7 @@ await render();
 setInterval(tick, 1000);
 
 // 자동 시험용
-window.__demo = { url: () => `${CHECK_URL}#${current}`, mode: (m) => { idx = SCENES.findIndex((s) => s.mode === m); return render(); } };
+window.__demo = { url: () => `${CHECK_URL}?q=${current.slice(-8)}#${current}`, mode: (m) => { idx = SCENES.findIndex((s) => s.mode === m); return render(); } };
 </script>
 </body>
 </html>
