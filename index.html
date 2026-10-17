@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>거꾸로 신분증 PoC</title>
+<script src="vendor/qrcode.js"></script>
+<style>
+  :root { --bg:#f3f5f8; --card:#fff; --ink:#1b2430; --sub:#5b6676; --line:#dfe4ea; --blue:#1f5fbf; --ok:#0f8a4b; --okbg:#e5f6ec; --bad:#c62828; --badbg:#fdeaea; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
+  header { padding:20px 24px 8px; }
+  header h1 { margin:0; font-size:22px; }
+  header p { margin:4px 0 0; color:var(--sub); font-size:14px; }
+  main { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; padding:16px 24px 24px; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; } }
+  .col h2 { font-size:14px; color:var(--sub); margin:0 0 8px; font-weight:600; }
+  .phone { background:var(--card); border:1px solid var(--line); border-radius:28px; padding:20px 18px; min-height:560px; box-shadow:0 6px 18px rgba(20,30,50,.06); }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; }
+  .app-bar { display:flex; align-items:center; gap:8px; font-weight:700; margin-bottom:14px; }
+  .app-bar .dot { width:10px; height:10px; border-radius:50%; background:var(--blue); }
+  button { font:inherit; border:0; border-radius:12px; padding:12px 14px; background:var(--blue); color:#fff; font-weight:600; cursor:pointer; width:100%; margin-top:8px; }
+  button.ghost { background:#eef2f8; color:var(--ink); }
+  button.warn { background:#fff4e5; color:#8a4b00; }
+  .qr { display:flex; justify-content:center; padding:10px; background:#fff; border:1px solid var(--line); border-radius:14px; }
+  .qr img { width:280px; height:280px; max-width:100%; image-rendering:pixelated; }
+  .bar { height:6px; background:#e7ebf0; border-radius:3px; overflow:hidden; margin:10px 0 4px; }
+  .bar i { display:block; height:100%; background:var(--blue); transition:width 1s linear; }
+  .meta { font-size:13px; color:var(--sub); }
+  .who { margin:12px 0; font-size:15px; line-height:1.5; }
+  .code { font-size:34px; letter-spacing:6px; font-weight:800; text-align:center; margin:10px 0; }
+  .result { border-radius:16px; padding:18px; margin-top:12px; display:none; }
+  .result.ok { display:block; background:var(--okbg); color:var(--ok); }
+  .result.bad { display:block; background:var(--badbg); color:var(--bad); }
+  .result .big { font-size:24px; font-weight:800; }
+  .result .msg { font-size:16px; margin-top:6px; color:var(--ink); }
+  .result dl { margin:10px 0 0; display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:15px; color:var(--ink); }
+  .result dt { color:var(--sub); }
+  .result .act { margin-top:10px; font-size:14px; color:var(--ink); }
+  input { font:inherit; font-size:22px; letter-spacing:4px; text-align:center; width:100%; padding:10px; border:1px solid var(--line); border-radius:12px; margin-top:8px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  td { padding:6px 4px; border-bottom:1px solid var(--line); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#eef2f8; }
+  .tag.off { background:var(--badbg); color:var(--bad); }
+  .phone-tip { background:#e5f6ec; color:#0b5d33 !important; padding:8px 12px; border-radius:10px; }
+  .modes { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .modes button { margin-top:0; font-size:13px; padding:9px 8px; }
+  .modes button.on { outline:3px solid #1b2430; }
+  .demo-note { font-size:12px; color:#5b6676; padding:0 24px 24px; }
+  hr { border:0; border-top:1px solid var(--line); margin:16px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>거꾸로 신분증 — 사칭 차단 QR · PoC</h1>
+  <p class="phone-tip">📱 <b>실제 휴대폰으로 해 보기</b> — 앱 설치 없이 휴대폰 카메라로 ② 화면의 QR을 찍으면 확인 화면이 열립니다. 아래 [폰으로 찍을 QR] 버튼으로 가짜·캡처·퇴직자 QR도 띄워 볼 수 있습니다.</p>
+  <p>기관이 직원 휴대폰에 '직무 자격 증명'을 발급 → 직원 앱이 30초마다 서명 QR 생성 → 시민이 자기 모바일신분증 앱으로 확인</p>
+</header>
+<main>
+  <section class="col">
+    <h2>① 발급기관 (경찰서 인사·감사 담당)</h2>
+    <div class="panel">
+      <table>
+        <tr><td>기관</td><td id="iss-name"></td></tr>
+        <tr><td>신뢰목록 등록</td><td><span class="tag">행정안전부 관리</span></td></tr>
+        <tr><td>직원</td><td id="emp-name"></td></tr>
+        <tr><td>상태</td><td><span class="tag" id="emp-state">재직</span></td></tr>
+      </table>
+      <button class="warn" id="btn-revoke">퇴직·직무정지 처리(폐지목록 등재)</button>
+      <button class="ghost" id="btn-restore">재직 상태로 되돌리기</button>
+      <hr>
+      <div class="meta">사기범 쪽(비교용)</div>
+      <button class="ghost" id="btn-fake">사기범이 만든 가짜 '경찰서' QR을 내민다</button>
+      <button class="ghost" id="btn-capture">진짜 QR을 1분 전에 캡처해 둔 사진을 내민다</button>
+    </div>
+  </section>
+
+  <section class="col">
+    <h2>② 직원 휴대폰 (모바일 공무원증 앱)</h2>
+    <div class="phone">
+      <div class="app-bar"><span class="dot"></span>직무 확인 QR</div>
+      <div class="qr"><img id="qr" alt="직무 확인 QR"></div>
+      <div class="bar"><i id="ttl"></i></div>
+      <div class="meta" id="ttl-text"></div>
+      <div class="who" id="emp-card"></div>
+      <div class="meta">폰으로 찍을 QR</div>
+      <div class="modes">
+        <button id="m-real" class="on">진짜 직원</button>
+        <button class="ghost" id="m-fake">가짜 '경찰서'</button>
+        <button class="ghost" id="m-capture">1분 전 캡처</button>
+        <button class="ghost" id="m-revoked">퇴직자</button>
+      </div>
+      <hr>
+      <div class="meta">전화로 연락할 때</div>
+      <button id="btn-code">전화 확인번호 받기 (60초)</button>
+      <div class="code" id="call-code">— — —</div>
+    </div>
+  </section>
+
+  <section class="col">
+    <h2>③ 시민 휴대폰 (모바일신분증 앱 › 상대 확인)</h2>
+    <div class="phone">
+      <div class="app-bar"><span class="dot"></span>지금 만난 사람, 진짜일까요?</div>
+      <button id="btn-scan">📷 상대방 QR 찍기</button>
+      <div class="meta" style="margin-top:14px">전화 중이라면, 상대에게 확인번호를 불러 달라고 하세요</div>
+      <input id="code-in" inputmode="numeric" maxlength="6" placeholder="6자리">
+      <button class="ghost" id="btn-lookup">확인번호 조회</button>
+      <div class="result" id="result">
+        <div class="big" id="r-big"></div>
+        <div class="msg" id="r-msg"></div>
+        <dl id="r-info"></dl>
+        <div class="act" id="r-act"></div>
+      </div>
+      <button class="ghost" id="btn-say" style="display:none">🔊 소리로 듣기</button>
+    </div>
+  </section>
+</main>
+<p class="demo-note">시연용 모의 환경입니다. 기관 키는 공개된 데모 키이고, 직원·기관 정보는 가상입니다. 실제 모바일신분증·인사시스템과 연동하지 않았습니다. 시민 확인 화면은 휴대폰 브라우저 안에서 서명을 직접 검증합니다(서버로 보내지 않음). 생성형 AI(Anthropic Claude)를 코드 작성 보조에 사용했습니다.</p>
+
+<script type="module">
+import * as P from './protocol.mjs';
+
+const $ = (id) => document.getElementById(id);
+const ALG = { name: 'ECDSA', namedCurve: 'P-256' };
+// 데모 발급기관 키(공개 데모 키). 시민 확인 화면(check.html)은 trust.json 의 공개키로만 검증한다.
+const trustList = await (await fetch('trust.json')).json();
+const jwk = await (await fetch('demo-issuer-key.json')).json();
+const ISS_ID = 'KR-POLICE-SEOUL-GN';
+const issuer = {
+  id: ISS_ID, name: trustList[ISS_ID].name,
+  keys: { privateKey: await crypto.subtle.importKey('jwk', jwk, ALG, false, ['sign']) },
+  pubRaw: P.unb64u(trustList[ISS_ID].pub),
+};
+const fakeIssuer = await P.createIssuer(ISS_ID, '서울강남경찰서');
+const emp = { id: 'E2026-0412', org: '서울강남경찰서 수사과', role: '수사관(방문 조사)', maskedName: '김○수', officeTel: '02-000-0000' };
+const oldEmp = { id: 'E2025-0099', org: '서울강남경찰서 수사과', role: '수사관(퇴직)', maskedName: '이○호', officeTel: '02-000-0000' };
+const phone = await P.createDevice();
+const cred = await P.issueCredential(issuer, phone, emp);
+const fakePhone = await P.createDevice();
+const fakeCred = await P.issueCredential(fakeIssuer, fakePhone, emp);
+const oldPhone = await P.createDevice();
+const oldCred = await P.issueCredential(issuer, oldPhone, oldEmp);
+const revoked = new Set();
+const seen = new Set();
+const server = P.createCallCodeServer();
+const CHECK_URL = new URL('check.html', location.href).href;
+
+$('iss-name').textContent = issuer.name;
+$('emp-name').textContent = `${emp.maskedName} · ${emp.role}`;
+$('emp-card').innerHTML = `<b>${emp.org}</b><br>${emp.role} ${emp.maskedName}<br><span class="meta">이 화면을 시민이 자기 휴대폰 카메라로 찍습니다</span>`;
+
+let mode = 'real';
+let current = '';
+let issuedAt = 0;
+function drawQR(token) {
+  const qr = qrcode(0, 'L');
+  qr.addData(`${CHECK_URL}#${token}`, 'Byte');
+  qr.make();
+  $('qr').src = qr.createDataURL(4, 8);
+}
+async function refresh() {
+  issuedAt = P.nowSec();
+  if (mode === 'real') current = await P.present(cred, phone, { now: issuedAt });
+  if (mode === 'fake') current = await P.present(fakeCred, fakePhone, { now: issuedAt });
+  if (mode === 'capture') current = await P.present(cred, phone, { now: issuedAt - 60 });
+  if (mode === 'revoked') current = await P.present(oldCred, oldPhone, { now: issuedAt });
+  drawQR(current);
+}
+const MODE_TEXT = {
+  real: '진짜 직원 QR',
+  fake: "사기범이 만든 가짜 '경찰서' QR",
+  capture: '1분 전에 캡처해 둔 진짜 QR',
+  revoked: '퇴직자(폐지목록 등재)의 QR',
+};
+function tick() {
+  const left = Math.max(0, P.QR_TTL_SEC - (P.nowSec() - issuedAt));
+  $('ttl').style.width = `${(left / P.QR_TTL_SEC) * 100}%`;
+  $('ttl-text').textContent = `지금 화면: ${MODE_TEXT[mode]} · ${left}초 뒤 새 QR`;
+  if (left === 0) refresh();
+}
+for (const m of Object.keys(MODE_TEXT)) {
+  $(`m-${m}`).onclick = async () => {
+    mode = m;
+    for (const k of Object.keys(MODE_TEXT)) $(`m-${k}`).className = k === m ? 'on' : 'ghost';
+    await refresh();
+    tick();
+  };
+}
+await refresh();
+tick();
+setInterval(tick, 1000);
+
+function show(r) {
+  const box = $('result');
+  box.className = `result ${r.ok ? 'ok' : 'bad'}`;
+  $('r-big').textContent = r.ok ? '✅ 진짜 직원입니다' : '⛔ 확인되지 않았습니다';
+  $('r-msg').textContent = r.message;
+  $('r-info').innerHTML = r.ok
+    ? `<dt>기관</dt><dd>${r.info.org}</dd><dt>직무</dt><dd>${r.info.role}</dd><dt>성명</dt><dd>${r.info.name}</dd>`
+    : '';
+  $('r-act').innerHTML = r.ok
+    ? `더 확인하려면 기관 대표번호 <b>${r.info.officeTel}</b>로 직접 전화하세요. (상대가 알려 준 번호 말고)`
+    : '돈·카드·앱 설치 요구에 응하지 마세요. <b>112</b>에 바로 신고할 수 있습니다.';
+  $('btn-say').style.display = 'block';
+  $('btn-say').onclick = () => speechSynthesis.speak(new SpeechSynthesisUtterance(`${$('r-big').textContent}. ${r.message}`));
+}
+const revokedNow = () => new Set([...revoked, `${ISS_ID}:${oldEmp.id}`]);
+
+$('btn-scan').onclick = async () => show(await P.verify(current, { trustList, revoked: revokedNow(), seen }));
+$('btn-fake').onclick = async () => show(await P.verify(await P.present(fakeCred, fakePhone), { trustList, revoked: revokedNow(), seen }));
+$('btn-capture').onclick = async () => show(await P.verify(await P.present(cred, phone, { now: P.nowSec() - 60 }), { trustList, revoked: revokedNow(), seen }));
+$('btn-revoke').onclick = async () => { revoked.add(`${issuer.id}:${emp.id}`); $('emp-state').textContent = '폐지'; $('emp-state').className = 'tag off'; };
+$('btn-restore').onclick = () => { revoked.clear(); $('emp-state').textContent = '재직'; $('emp-state').className = 'tag'; };
+$('btn-code').onclick = async () => {
+  const r = await P.verify(await P.present(cred, phone), { trustList, revoked: revokedNow() });
+  $('call-code').textContent = r.ok ? await server.issue(r.info) : '발급 불가';
+};
+$('btn-lookup').onclick = () => show(server.lookup($('code-in').value.trim(), 'this-citizen'));
+
+// 자동 시험용
+window.__demo = { url: () => `${CHECK_URL}#${current}`, mode: (m) => $(`m-${m}`).click() };
+</script>
+</body>
+</html>

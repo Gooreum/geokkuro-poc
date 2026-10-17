@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>상대 확인 — 거꾸로 신분증 PoC</title>
+<style>
+  :root { --ink:#1b2430; --sub:#5b6676; --ok:#0f8a4b; --okbg:#e5f6ec; --bad:#c62828; --badbg:#fdeaea; --line:#dfe4ea; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#f3f5f8; color:var(--ink); font-family:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
+  .wrap { max-width:480px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right, 0px)) 32px max(16px, env(safe-area-inset-left, 0px)); }
+  .bar { display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; color:var(--sub); }
+  .bar i { width:10px; height:10px; border-radius:50%; background:#1f5fbf; }
+  .card { margin-top:14px; border-radius:20px; padding:22px 20px; background:#fff; border:1px solid var(--line); }
+  .card.ok { background:var(--okbg); border-color:#bfe6cf; }
+  .card.bad { background:var(--badbg); border-color:#f3c4c4; }
+  .big { font-size:30px; font-weight:800; line-height:1.25; }
+  .ok .big { color:var(--ok); } .bad .big { color:var(--bad); }
+  .msg { font-size:18px; margin-top:8px; line-height:1.5; }
+  dl { margin:16px 0 0; display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-size:18px; }
+  dt { color:var(--sub); }
+  .act { margin-top:16px; font-size:16px; line-height:1.55; }
+  button { font:inherit; font-size:17px; font-weight:700; border:0; border-radius:14px; padding:14px; width:100%; margin-top:14px; background:#1b2430; color:#fff; }
+  .note { margin-top:18px; font-size:13px; color:var(--sub); line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"><i></i>모바일신분증 › 상대 확인</div>
+  <div class="card" id="card"><div class="big">확인 중…</div></div>
+  <button id="say" hidden>🔊 소리로 듣기</button>
+  <p class="note">시연용 모의 화면입니다(가상의 기관·직원). 이 휴대폰 브라우저 안에서 기관 서명·직원 단말 서명·시각·폐지 여부를 직접 검증하며, 휴대폰 정보는 어디로도 보내지 않습니다. 실서비스에서는 공식 모바일신분증 앱의 [상대 확인] 메뉴로 동작합니다.</p>
+</div>
+<script type="module">
+import * as P from './protocol.mjs';
+const card = document.getElementById('card');
+const token = decodeURIComponent(location.hash.slice(1));
+// 이미 확인한 QR(재사용) 기록은 이 휴대폰에만 남긴다
+let seenList = [];
+try { seenList = JSON.parse(localStorage.getItem('midr-seen') || '[]'); } catch {}
+const seen = new Set(seenList);
+
+async function run() {
+  if (!token) return { ok: false, code: 'BAD_FORMAT', message: P.RESULT.BAD_FORMAT };
+  if (!globalThis.crypto?.subtle) return { ok: false, code: 'NO_CRYPTO', message: '이 브라우저에서는 확인할 수 없습니다(https 주소로 열어 주세요)' };
+  const [trustList, revokedList] = await Promise.all([
+    fetch('trust.json', { cache: 'no-store' }).then((r) => r.json()),
+    fetch('revoked.json', { cache: 'no-store' }).then((r) => r.json()),
+  ]);
+  return P.verify(token, { trustList, revoked: new Set(revokedList), seen });
+}
+
+const r = await run().catch(() => ({ ok: false, code: 'ERROR', message: '확인 중 오류가 났습니다. 다시 찍어 주세요' }));
+try { localStorage.setItem('midr-seen', JSON.stringify([...seen].slice(-200))); } catch {}
+// 확인을 마친 QR 은 주소창에서 지워 뒤로가기·새로고침으로 다시 쓰지 않게 한다
+history.replaceState(null, '', location.pathname);
+
+card.className = `card ${r.ok ? 'ok' : 'bad'}`;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+card.innerHTML = r.ok
+  ? `<div class="big">✅ 진짜 직원입니다</div><div class="msg">${esc(r.message)}</div>
+     <dl><dt>기관</dt><dd>${esc(r.info.org)}</dd><dt>직무</dt><dd>${esc(r.info.role)}</dd><dt>성명</dt><dd>${esc(r.info.name)}</dd></dl>
+     <div class="act">더 확인하려면 기관 대표번호 <b>${esc(r.info.officeTel)}</b>로 직접 전화하세요. (상대가 알려 준 번호 말고)</div>`
+  : `<div class="big">⛔ 확인되지 않았습니다</div><div class="msg">${esc(r.message)}</div>
+     <div class="act">돈·카드·앱 설치 요구에 응하지 마세요. <b>112</b>에 바로 신고할 수 있습니다.</div>`;
+const say = document.getElementById('say');
+say.hidden = false;
+say.onclick = () => speechSynthesis.speak(new SpeechSynthesisUtterance(`${r.ok ? '진짜 직원입니다' : '확인되지 않았습니다'}. ${r.message}`));
+</script>
+</body>
+</html>
