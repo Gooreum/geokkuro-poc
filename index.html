@@ -14,7 +14,7 @@
   .brand { font-weight:800; font-size:18px; }
   .brand small { display:block; font-weight:500; font-size:13px; color:var(--sub); margin-top:2px; }
   .dots { display:flex; gap:8px; }
-  .dots i { width:34px; height:8px; border-radius:4px; background:#d5dce5; }
+  .dots i { width:26px; height:8px; border-radius:4px; background:#d5dce5; }
   .dots i.on { background:var(--blue); }
   .dots i.done { background:#8fb0e3; }
 
@@ -38,6 +38,13 @@
   .qr img { display:block; width:min(360px, 100%); height:auto; aspect-ratio:1; image-rendering:pixelated; }
   .timer { margin:10px auto 0; width:min(390px,100%); height:6px; background:#e3e8ee; border-radius:3px; overflow:hidden; }
   .timer i { display:block; height:100%; background:var(--blue); transition:width 1s linear; }
+  .callcard { margin:0 auto 14px; width:min(390px,100%); background:#14202e; color:#fff; border-radius:22px; padding:18px 18px 16px; }
+  .callcard[hidden] { display:none; }
+  .calltop { font-size:15px; font-weight:700; opacity:.85; }
+  .callsay { font-size:15px; margin-top:12px; opacity:.85; }
+  .callcode { font-size:52px; font-weight:900; letter-spacing:8px; margin-top:4px; }
+  .callcard .tiny { color:#c9d3df; }
+  .callmode .qr img { width:min(200px, 100%); }
   .tiny { font-size:13px; color:var(--sub); margin-top:6px; }
 
   .nav { display:flex; justify-content:space-between; gap:12px; margin-top:18px; }
@@ -65,7 +72,7 @@
 <div class="wrap">
   <div class="top">
     <div class="brand">거꾸로 신분증<small>시민이 공무원의 신분을 확인하는 사칭 차단 QR · 시연</small></div>
-    <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+    <div class="dots" id="dots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
   </div>
 
   <section class="scene">
@@ -75,8 +82,14 @@
       <p class="do" id="do"></p>
       <div class="expect" id="expect"></div>
     </div>
-    <div class="qrbox">
-      <div class="camera">📱 휴대폰 카메라로 찍어 보세요</div>
+    <div class="qrbox" id="qrbox">
+      <div class="callcard" id="callcard" hidden>
+        <div class="calltop">📞 통화 중 · <span id="caller"></span></div>
+        <div class="callsay">상대가 불러 준 확인번호</div>
+        <div class="callcode" id="callcode"></div>
+        <div class="tiny" id="calltip"></div>
+      </div>
+      <div class="camera" id="camera">📱 휴대폰 카메라로 찍어 보세요</div>
       <div class="qr"><img id="qr" alt="휴대폰 카메라로 찍는 QR"></div>
       <div class="timer"><i id="ttl"></i></div>
       <div class="tiny" id="ttl-text"></div>
@@ -102,6 +115,7 @@
 
 <script type="module">
 import * as P from './protocol.mjs';
+import * as C from './call.mjs';
 
 const $ = (id) => document.getElementById(id);
 const ALG = { name: 'ECDSA', namedCurve: 'P-256' };
@@ -124,30 +138,50 @@ const oldPhone = await P.createDevice();
 const oldCred = await P.issueCredential(issuer, oldPhone, oldEmp);
 const CHECK_URL = new URL('check.html', location.href).href;
 
+const CALL_KEY = (await (await fetch('call-key.json')).json()).key;
+const FAKE_CODE = String(100000 + Math.floor(Math.random() * 900000));
 const SCENES = [
   {
-    mode: 'real',
+    mode: 'call', group: '📞 전화가 왔을 때',
+    story: '📞 <span class="who">"서울강남경찰서 김○수 수사관입니다"</span> 하고 진짜 경찰관이 전화했어요.',
+    do: '① 오른쪽 아래 QR을 찍어 <b>확인번호 입력 화면</b>을 여세요.<br>② 수사관이 불러 준 <b>큰 숫자 6자리</b>를 넣으세요.',
+    expect: ['ok', '✅', '초록색이 나오면 성공!', '“진짜 직원이에요”'],
+    caller: '서울강남경찰서 김○수 수사관',
+    code: async () => C.issue(CALL_KEY, 'E2026-0412'),
+    tip: '진짜 직원은 기관에서 받은 1회용 번호를 바로 불러 줄 수 있어요.',
+  },
+  {
+    mode: 'callfake', group: '📞 전화가 왔을 때',
+    story: '📞 <span class="fake">"검찰청입니다. 당신 계좌가 범죄에 쓰였어요"</span> 하고 사기 전화가 왔어요.',
+    do: '"확인번호를 불러 주세요"라고 하면, 사기범은 번호를 받을 수 없어서 <b>아무 숫자나 지어내요.</b> 그 숫자를 넣어 보세요.',
+    expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 전화를 끊으세요'],
+    caller: '자칭 서울중앙지검 수사관',
+    code: async () => ({ code: FAKE_CODE, left: null }),
+    tip: '사기범이 지어낸 번호예요. 기관에 등록된 번호가 아니에요.',
+  },
+  {
+    mode: 'real', group: '🚪 직접 만났을 때',
     story: '<span class="who">진짜 경찰관</span>이 우리 집 문 앞에 왔어요.',
     do: '경찰관 휴대폰에 뜬 QR이 오른쪽 네모예요. <b>내 휴대폰 카메라</b>로 찍고, 뜨는 링크를 누르세요.',
     expect: ['ok', '✅', '초록색이 나오면 성공!', '“진짜 직원이에요”'],
     present: (now) => P.present(cred, phone, { now }),
   },
   {
-    mode: 'fake',
+    mode: 'fake', group: '🚪 직접 만났을 때',
     story: '<span class="fake">가짜 경찰관(사기범)</span>이 그럴듯한 QR을 직접 만들어 왔어요.',
     do: '이번에도 <b>똑같이 찍어 보세요.</b> 경찰서 이름을 흉내 내도 속지 않아요.',
     expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 문을 열지 마세요'],
     present: (now) => P.present(fakeCred, fakePhone, { now }),
   },
   {
-    mode: 'capture',
+    mode: 'capture', group: '🚪 직접 만났을 때',
     story: '사기범이 진짜 경찰관 QR을 <span class="fake">몰래 사진으로 찍어</span> 두었다가 내밀어요.',
     do: '<b>찍어 보세요.</b> QR은 30초마다 바뀌어서 예전에 찍어 둔 사진은 쓸 수 없어요.',
     expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 예전에 찍어 둔 QR'],
     present: (now) => P.present(cred, phone, { now: now - 60 }),
   },
   {
-    mode: 'revoked',
+    mode: 'revoked', group: '🚪 직접 만났을 때',
     story: '<span class="fake">이미 그만둔 경찰관</span>이 옛날 신분증으로 찾아왔어요.',
     do: '<b>찍어 보세요.</b> 그만두면 경찰서가 바로 막아서 더는 통하지 않아요.',
     expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 그만둔 사람'],
@@ -167,12 +201,43 @@ function draw(token) {
   $('qr').src = qr.createDataURL(5, 8);
   $('here').href = `${CHECK_URL}?q=${token.slice(-8)}#${token}`;
 }
+const isCall = () => Boolean(SCENES[idx].code);
 async function refresh() {
   issuedAt = P.nowSec();
-  current = await SCENES[idx].present(issuedAt);
+  const s = SCENES[idx];
+  if (s.code) {
+    // 전화 장면: QR 은 '확인번호 입력 화면'을 연다. 큰 숫자는 직원(또는 사기범)이 불러 주는 번호.
+    current = 'call';
+    const qr = qrcode(0, 'M');
+    // 장면마다 주소를 다르게 해서, 폰이 결과 화면을 열어 둔 채 다시 찍어도 입력 화면이 새로 열린다
+    const callUrl = `${CHECK_URL}?q=call${idx}${issuedAt % 100000}#call`;
+    qr.addData(callUrl, 'Byte');
+    qr.make();
+    $('qr').src = qr.createDataURL(6, 4);
+    $('here').href = callUrl;
+    const { code } = await s.code();
+    $('callcode').textContent = `${code.slice(0, 3)} ${code.slice(3)}`;
+    return;
+  }
+  current = await s.present(issuedAt);
   draw(current);
 }
 function tick() {
+  if (isCall()) {
+    const s = SCENES[idx];
+    if (s.mode === 'call') {
+      const left = C.CALL_TTL_SEC - (P.nowSec() % C.CALL_TTL_SEC);
+      $('ttl').style.width = `${(left / C.CALL_TTL_SEC) * 100}%`;
+      $('ttl-text').textContent = '';
+      $('calltip').textContent = `${s.tip} · ${left}초 뒤 새 번호`;
+      if (left === C.CALL_TTL_SEC) refresh();
+    } else {
+      $('ttl').style.width = '0%';
+      $('ttl-text').textContent = '';
+      $('calltip').textContent = s.tip;
+    }
+    return;
+  }
   const left = Math.max(0, P.QR_TTL_SEC - (P.nowSec() - issuedAt));
   $('ttl').style.width = `${(left / P.QR_TTL_SEC) * 100}%`;
   $('ttl-text').textContent = `QR은 ${left}초 뒤에 새로 바뀌어요`;
@@ -180,7 +245,12 @@ function tick() {
 }
 async function render() {
   const s = SCENES[idx];
-  $('num').textContent = `장면 ${idx + 1} / ${SCENES.length}`;
+  $('num').textContent = `장면 ${idx + 1} / ${SCENES.length} · ${s.group}`;
+  const call = Boolean(s.code);
+  $('callcard').hidden = !call;
+  $('caller').textContent = s.caller ?? '';
+  $('qrbox').className = call ? 'qrbox callmode' : 'qrbox';
+  $('camera').textContent = call ? '📱 이 QR을 찍으면 확인번호 입력 화면이 열려요' : '📱 휴대폰 카메라로 찍어 보세요';
   $('story').innerHTML = s.story;
   $('do').innerHTML = s.do;
   const [cls, icon, head, sub] = s.expect;
@@ -198,7 +268,7 @@ await render();
 setInterval(tick, 1000);
 
 // 자동 시험용
-window.__demo = { url: () => `${CHECK_URL}?q=${current.slice(-8)}#${current}`, mode: (m) => { idx = SCENES.findIndex((s) => s.mode === m); return render(); } };
+window.__demo = { url: () => (current === 'call' ? $('here').href : `${CHECK_URL}?q=${current.slice(-8)}#${current}`), mode: (m) => { idx = SCENES.findIndex((s) => s.mode === m); return render(); } };
 </script>
 </body>
 </html>
