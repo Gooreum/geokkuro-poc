@@ -5,35 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>상대 확인 — 거꾸로 신분증 PoC</title>
 <style>
-  :root { --ink:#1b2430; --sub:#5b6676; --ok:#0f8a4b; --okbg:#e5f6ec; --bad:#c62828; --badbg:#fdeaea; --line:#dfe4ea; }
+  :root { --ink:#14202e; --sub:#5a6676; --ok:#0f8a4b; --okbg:#e3f6ea; --bad:#d0261f; --badbg:#fdeceb; }
   * { box-sizing:border-box; }
-  body { margin:0; background:#f3f5f8; color:var(--ink); font-family:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
-  .wrap { max-width:480px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right, 0px)) 32px max(16px, env(safe-area-inset-left, 0px)); }
-  .bar { display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; color:var(--sub); }
-  .bar i { width:10px; height:10px; border-radius:50%; background:#1f5fbf; }
-  .card { margin-top:14px; border-radius:20px; padding:22px 20px; background:#fff; border:1px solid var(--line); }
-  .card.ok { background:var(--okbg); border-color:#bfe6cf; }
-  .card.bad { background:var(--badbg); border-color:#f3c4c4; }
-  .big { font-size:30px; font-weight:800; line-height:1.25; }
+  body { margin:0; color:var(--ink); font-family:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; background:#f4f6f9; }
+  body.ok { background:var(--okbg); } body.bad { background:var(--badbg); }
+  .wrap { max-width:480px; margin:0 auto; padding:28px max(18px, env(safe-area-inset-right,0px)) 32px max(18px, env(safe-area-inset-left,0px)); text-align:center; }
+  .bar { font-size:14px; font-weight:700; color:var(--sub); }
+  .icon { font-size:96px; line-height:1; margin-top:26px; }
+  .big { font-size:34px; font-weight:900; line-height:1.25; margin-top:14px; }
   .ok .big { color:var(--ok); } .bad .big { color:var(--bad); }
-  .msg { font-size:18px; margin-top:8px; line-height:1.5; }
-  dl { margin:16px 0 0; display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-size:18px; }
-  dt { color:var(--sub); }
-  .act { margin-top:16px; font-size:16px; line-height:1.55; }
-  button { font:inherit; font-size:17px; font-weight:700; border:0; border-radius:14px; padding:14px; width:100%; margin-top:14px; background:#1b2430; color:#fff; }
-  .note { margin-top:18px; font-size:13px; color:var(--sub); line-height:1.6; }
+  .why { font-size:21px; font-weight:700; margin-top:12px; line-height:1.45; }
+  .info { margin:22px auto 0; background:#fff; border-radius:18px; padding:16px 18px; text-align:left; font-size:18px; line-height:1.7; }
+  .info b { display:inline-block; min-width:56px; color:var(--sub); font-weight:600; }
+  .act { margin-top:18px; font-size:18px; line-height:1.55; background:#fff; border-radius:18px; padding:16px 18px; }
+  .act strong { color:var(--bad); }
+  button { font:inherit; font-size:18px; font-weight:800; border:0; border-radius:16px; padding:15px; width:100%; margin-top:16px; background:var(--ink); color:#fff; }
+  .next { margin-top:22px; font-size:16px; font-weight:700; color:var(--ink); background:#ffffffaa; border-radius:14px; padding:12px; }
+  .note { margin-top:18px; font-size:12px; color:var(--sub); line-height:1.6; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="bar"><i></i>모바일신분증 › 상대 확인</div>
-  <div class="card" id="card"><div class="big">확인 중…</div></div>
+<div class="wrap" id="wrap">
+  <div class="bar">모바일신분증 › 상대 확인</div>
+  <div class="icon" id="icon">⏳</div>
+  <div class="big" id="big">확인하고 있어요…</div>
+  <div class="why" id="why"></div>
+  <div id="detail"></div>
   <button id="say" hidden>🔊 소리로 듣기</button>
-  <p class="note">시연용 모의 화면입니다(가상의 기관·직원). 이 휴대폰 브라우저 안에서 기관 서명·직원 단말 서명·시각·폐지 여부를 직접 검증하며, 휴대폰 정보는 어디로도 보내지 않습니다. 실서비스에서는 공식 모바일신분증 앱의 [상대 확인] 메뉴로 동작합니다.</p>
+  <div class="next">시연 중이라면 PC 화면에서 <b>[다음 →]</b>을 누르고 다음 QR을 찍어 보세요.</div>
+  <p class="note">시연용 모의 화면이에요(가상의 경찰서·직원). 이 휴대폰 안에서 전자서명·시간·폐지 여부를 직접 검사하고, 휴대폰 정보는 어디로도 보내지 않아요.</p>
 </div>
 <script type="module">
 import * as P from './protocol.mjs';
-const card = document.getElementById('card');
 const token = decodeURIComponent(location.hash.slice(1));
 // 이미 확인한 QR(재사용) 기록은 이 휴대폰에만 남긴다
 let seenList = [];
@@ -55,17 +58,30 @@ try { localStorage.setItem('midr-seen', JSON.stringify([...seen].slice(-200))); 
 // 확인을 마친 QR 은 주소창에서 지워 뒤로가기·새로고침으로 다시 쓰지 않게 한다
 history.replaceState(null, '', location.pathname);
 
-card.className = `card ${r.ok ? 'ok' : 'bad'}`;
+const WHY = {
+  OK: '',
+  TAMPERED: '누군가 몰래 만든 가짜 QR이에요.',
+  UNTRUSTED_ISSUER: '나라에 등록되지 않은 기관의 QR이에요.',
+  STALE: '예전에 찍어 둔 사진 QR이에요. 진짜 QR은 30초마다 바뀌어요.',
+  REVOKED: '이미 그만뒀거나 일을 멈춘 사람이에요.',
+  DEVICE_MISMATCH: '본인 휴대폰이 아닌 곳에서 만든 QR이에요.',
+  REPLAY: '이미 한 번 확인한 QR이에요. 새로 바뀐 QR을 찍어 주세요.',
+  CRED_EXPIRED: '기간이 끝난 신분이에요.',
+  BAD_FORMAT: '신분 확인용 QR이 아니에요.',
+};
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-card.innerHTML = r.ok
-  ? `<div class="big">✅ 진짜 직원입니다</div><div class="msg">${esc(r.message)}</div>
-     <dl><dt>기관</dt><dd>${esc(r.info.org)}</dd><dt>직무</dt><dd>${esc(r.info.role)}</dd><dt>성명</dt><dd>${esc(r.info.name)}</dd></dl>
-     <div class="act">더 확인하려면 기관 대표번호 <b>${esc(r.info.officeTel)}</b>로 직접 전화하세요. (상대가 알려 준 번호 말고)</div>`
-  : `<div class="big">⛔ 확인되지 않았습니다</div><div class="msg">${esc(r.message)}</div>
-     <div class="act">돈·카드·앱 설치 요구에 응하지 마세요. <b>112</b>에 바로 신고할 수 있습니다.</div>`;
+document.body.className = r.ok ? 'ok' : 'bad';
+document.getElementById('wrap').className = `wrap ${r.ok ? 'ok' : 'bad'}`;
+document.getElementById('icon').textContent = r.ok ? '✅' : '⛔';
+document.getElementById('big').textContent = r.ok ? '진짜 직원이에요' : '가짜일 수 있어요!';
+document.getElementById('why').textContent = r.ok ? '나라에 등록된 기관이 확인해 준 사람이에요.' : (WHY[r.code] ?? r.message);
+document.getElementById('detail').innerHTML = r.ok
+  ? `<div class="info"><b>기관</b> ${esc(r.info.org)}<br><b>하는 일</b> ${esc(r.info.role)}<br><b>이름</b> ${esc(r.info.name)}</div>
+     <div class="act">그래도 걱정되면 기관 대표번호 <b>${esc(r.info.officeTel)}</b>로 직접 전화해 보세요.</div>`
+  : `<div class="act"><strong>문을 열지 마세요.</strong><br>돈·카드·앱 설치를 요구해도 들어주지 마세요.<br>걱정되면 <strong>112</strong>에 신고하세요.</div>`;
 const say = document.getElementById('say');
 say.hidden = false;
-say.onclick = () => speechSynthesis.speak(new SpeechSynthesisUtterance(`${r.ok ? '진짜 직원입니다' : '확인되지 않았습니다'}. ${r.message}`));
+say.onclick = () => speechSynthesis.speak(new SpeechSynthesisUtterance(`${document.getElementById('big').textContent} ${document.getElementById('why').textContent}`));
 </script>
 </body>
 </html>

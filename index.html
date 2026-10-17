@@ -3,161 +3,108 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>거꾸로 신분증 PoC</title>
+<title>거꾸로 신분증 — 휴대폰으로 찍어 보세요</title>
 <script src="vendor/qrcode.js"></script>
 <style>
-  :root { --bg:#f3f5f8; --card:#fff; --ink:#1b2430; --sub:#5b6676; --line:#dfe4ea; --blue:#1f5fbf; --ok:#0f8a4b; --okbg:#e5f6ec; --bad:#c62828; --badbg:#fdeaea; }
+  :root { --bg:#f4f6f9; --ink:#14202e; --sub:#5a6676; --line:#dde3ea; --blue:#1f5fbf; --ok:#0f8a4b; --okbg:#e3f6ea; --bad:#d0261f; --badbg:#fdeceb; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font-family:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
-  .phone { background:var(--card); border:1px solid var(--line); border-radius:28px; padding:20px 18px; min-height:560px; box-shadow:0 6px 18px rgba(20,30,50,.06); }
-  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; }
-  .app-bar { display:flex; align-items:center; gap:8px; font-weight:700; margin-bottom:14px; }
-  .app-bar .dot { width:10px; height:10px; border-radius:50%; background:var(--blue); }
-  button { font:inherit; border:0; border-radius:12px; padding:12px 14px; background:var(--blue); color:#fff; font-weight:600; cursor:pointer; width:100%; margin-top:8px; }
-  button.ghost { background:#eef2f8; color:var(--ink); }
-  button.warn { background:#fff4e5; color:#8a4b00; }
-  .qr { display:flex; justify-content:center; padding:10px; background:#fff; border:1px solid var(--line); border-radius:14px; }
-  .qr img { width:280px; height:280px; max-width:100%; image-rendering:pixelated; }
-  .bar { height:6px; background:#e7ebf0; border-radius:3px; overflow:hidden; margin:10px 0 4px; }
-  .bar i { display:block; height:100%; background:var(--blue); transition:width 1s linear; }
-  .meta { font-size:13px; color:var(--sub); }
-  .who { margin:12px 0; font-size:15px; line-height:1.5; }
-  .code { font-size:34px; letter-spacing:6px; font-weight:800; text-align:center; margin:10px 0; }
-  .result { border-radius:16px; padding:18px; margin-top:12px; display:none; }
-  .result.ok { display:block; background:var(--okbg); color:var(--ok); }
-  .result.bad { display:block; background:var(--badbg); color:var(--bad); }
-  .result .big { font-size:24px; font-weight:800; }
-  .result .msg { font-size:16px; margin-top:6px; color:var(--ink); }
-  .result dl { margin:10px 0 0; display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:15px; color:var(--ink); }
-  .result dt { color:var(--sub); }
-  .result .act { margin-top:10px; font-size:14px; color:var(--ink); }
-  input { font:inherit; font-size:22px; letter-spacing:4px; text-align:center; width:100%; padding:10px; border:1px solid var(--line); border-radius:12px; margin-top:8px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  td { padding:6px 4px; border-bottom:1px solid var(--line); }
-  .tag { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#eef2f8; }
-  .tag.off { background:var(--badbg); color:var(--bad); }
-  .hero { max-width:1080px; margin:0 auto; padding:28px max(16px, env(safe-area-inset-left,0px)) 8px; }
-  .hero h1 { margin:0; font-size:28px; }
-  .lead { margin:8px 0 18px; font-size:17px; color:var(--ink); line-height:1.55; }
-  .steps { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .steps li { display:flex; gap:12px; align-items:center; background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 16px; font-size:17px; line-height:1.35; }
-  .steps li > b { flex:none; width:40px; height:40px; border-radius:50%; background:var(--blue); color:#fff; display:grid; place-items:center; font-size:20px; }
-  .steps small { color:var(--sub); font-size:13px; }
-  .g { color:var(--ok); } .r { color:var(--bad); }
-  .stage { max-width:1080px; margin:0 auto; padding:16px max(16px, env(safe-area-inset-left,0px)); display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:20px; align-items:start; }
-  .qrcard { background:#fff; border:1px solid var(--line); border-radius:24px; padding:20px; box-shadow:0 8px 24px rgba(20,30,50,.07); }
-  .who-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
-  .org { font-size:15px; line-height:1.5; }
-  .badge { flex:none; font-size:13px; font-weight:700; padding:5px 10px; border-radius:999px; background:var(--okbg); color:var(--ok); }
-  .badge.bad { background:var(--badbg); color:var(--bad); }
-  .qrcard .qr img { width:340px; height:340px; }
-  .try h2 { margin:4px 0 4px; font-size:20px; }
-  .modes { display:grid; gap:10px; margin-top:12px; }
-  .modes button { margin:0; text-align:left; padding:14px 16px; display:flex; flex-direction:column; gap:3px; font-size:16px; }
-  .modes button small { font-size:13px; font-weight:500; opacity:.9; }
-  .modes button.on { outline:3px solid #1b2430; outline-offset:1px; }
-  .modes button.on .g, .modes button.on .r { color:#fff; text-decoration:underline; }
-  .tip { margin-top:14px; }
-  .more { max-width:1080px; margin:8px auto 0; padding:0 max(16px, env(safe-area-inset-left,0px)); }
-  .more summary { cursor:pointer; font-weight:700; padding:14px 16px; background:#fff; border:1px solid var(--line); border-radius:14px; }
-  .cols { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; padding:16px 0; }
-  .col h3 { font-size:14px; color:var(--sub); margin:0 0 8px; }
-  .phone { min-height:0 !important; }
-  .demo-note { max-width:1080px; margin:0 auto; font-size:12px; color:#5b6676; padding:8px max(16px, env(safe-area-inset-left,0px)) 28px; }
-  @media (max-width:820px) { .steps, .stage, .cols { grid-template-columns:1fr; } .qrcard .qr img { width:min(300px,100%); height:auto; } }
-  .phone-tip { background:#e5f6ec; color:#0b5d33 !important; padding:8px 12px; border-radius:10px; }
-  hr { border:0; border-top:1px solid var(--line); margin:16px 0; }
+  .wrap { max-width:1040px; margin:0 auto; padding:24px max(16px, env(safe-area-inset-right,0px)) 32px max(16px, env(safe-area-inset-left,0px)); }
+  .top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .brand { font-weight:800; font-size:18px; }
+  .brand small { display:block; font-weight:500; font-size:13px; color:var(--sub); margin-top:2px; }
+  .dots { display:flex; gap:8px; }
+  .dots i { width:34px; height:8px; border-radius:4px; background:#d5dce5; }
+  .dots i.on { background:var(--blue); }
+  .dots i.done { background:#8fb0e3; }
+
+  .scene { margin-top:20px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px; align-items:center;
+           background:#fff; border:1px solid var(--line); border-radius:28px; padding:32px; box-shadow:0 10px 30px rgba(20,32,46,.07); }
+  .num { display:inline-block; font-size:15px; font-weight:800; color:var(--blue); background:#e8f0fc; padding:6px 12px; border-radius:999px; }
+  .story { font-size:30px; font-weight:800; line-height:1.35; margin:14px 0 12px; text-wrap:balance; }
+  .story .who { color:var(--blue); }
+  .story .fake { color:var(--bad); }
+  .do { font-size:22px; line-height:1.5; margin:18px 0 0; }
+  .do b { background:#fff3b0; padding:0 4px; }
+  .expect { margin-top:22px; display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:18px; font-size:20px; font-weight:800; }
+  .expect.ok { background:var(--okbg); color:var(--ok); }
+  .expect.bad { background:var(--badbg); color:var(--bad); }
+  .expect .icon { font-size:38px; line-height:1; }
+  .expect small { display:block; font-size:15px; font-weight:600; color:var(--ink); margin-top:3px; }
+
+  .qrbox { text-align:center; }
+  .camera { font-size:20px; font-weight:800; margin-bottom:10px; }
+  .qr { display:inline-block; padding:14px; background:#fff; border:4px dashed var(--blue); border-radius:22px; }
+  .qr img { display:block; width:min(360px, 100%); height:auto; aspect-ratio:1; image-rendering:pixelated; }
+  .timer { margin:10px auto 0; width:min(390px,100%); height:6px; background:#e3e8ee; border-radius:3px; overflow:hidden; }
+  .timer i { display:block; height:100%; background:var(--blue); transition:width 1s linear; }
+  .tiny { font-size:13px; color:var(--sub); margin-top:6px; }
+
+  .nav { display:flex; justify-content:space-between; gap:12px; margin-top:18px; }
+  button { font:inherit; font-size:20px; font-weight:800; border:0; border-radius:16px; padding:16px 26px; cursor:pointer; }
+  .next { background:var(--blue); color:#fff; flex:1; max-width:420px; margin-left:auto; }
+  .prev { background:#e6ebf1; color:var(--ink); }
+  .prev[hidden] { display:none; }
+
+  .onphone { display:none; margin-top:18px; padding:18px; border-radius:18px; background:#fff3d6; font-size:17px; line-height:1.55; }
+  .onphone a { display:block; margin-top:10px; text-align:center; background:var(--ink); color:#fff; text-decoration:none; font-weight:800; padding:14px; border-radius:14px; }
+  .foot { margin-top:22px; font-size:13px; color:var(--sub); line-height:1.6; }
+  .foot a { color:var(--blue); }
+
+  @media (max-width:820px) {
+    .scene { grid-template-columns:1fr; padding:22px; gap:18px; }
+    .story { font-size:24px; }
+    .do { font-size:19px; }
+    .qrbox { order:-1; }
+    .next { max-width:none; }
+  }
+  @media (hover:none) and (max-width:820px) { .onphone { display:block; } }
 </style>
 </head>
 <body>
-<header class="hero">
-  <h1>거꾸로 신분증 — 공무원 사칭 차단 QR</h1>
-  <p class="lead">"검찰입니다", "경찰서에서 나왔습니다" — 지금 만난 사람이 <b>진짜 공무원인지</b> 시민이 자기 휴대폰으로 확인하는 서비스의 시연입니다.</p>
-  <ol class="steps">
-    <li><b>1</b><span>휴대폰 <b>카메라</b>를 켜세요<br><small>앱 설치 필요 없음</small></span></li>
-    <li><b>2</b><span>아래 <b>QR을 찍고</b><br><small>뜨는 링크를 누르세요</small></span></li>
-    <li><b>3</b><span><b class="g">초록</b>이면 진짜 직원<br><b class="r">빨강</b>이면 사칭 의심</span></li>
-  </ol>
-</header>
-
-<main class="stage">
-  <section class="qrcard">
-    <div class="who-top">
-      <div class="org" id="emp-card"></div>
-      <span class="badge" id="mode-badge">진짜 직원</span>
-    </div>
-    <div class="qr"><img id="qr" alt="직무 확인 QR — 휴대폰 카메라로 찍으세요"></div>
-    <div class="bar"><i id="ttl"></i></div>
-    <div class="meta" id="ttl-text"></div>
-  </section>
-
-  <section class="try">
-    <h2>사칭 QR로 바꿔 보기</h2>
-    <p class="meta">버튼을 누르면 직원 화면의 QR이 바뀝니다. 다시 찍어 보세요.</p>
-    <div class="modes">
-      <button id="m-real" class="on"><b>진짜 직원</b><small>→ 폰에 <span class="g">초록</span></small></button>
-      <button class="ghost" id="m-fake"><b>사기범이 만든 가짜 '경찰서' QR</b><small>→ 폰에 <span class="r">빨강</span> · 위조된 서명</small></button>
-      <button class="ghost" id="m-capture"><b>1분 전에 캡처해 둔 진짜 QR</b><small>→ 폰에 <span class="r">빨강</span> · 30초 지난 QR</small></button>
-      <button class="ghost" id="m-revoked"><b>퇴직한 직원의 QR</b><small>→ 폰에 <span class="r">빨강</span> · 폐지된 신분</small></button>
-    </div>
-    <p class="meta tip">같은 QR을 한 휴대폰으로 두 번 찍으면 "이미 사용된 QR"로 막힙니다.</p>
-  </section>
-</main>
-
-<details class="more">
-  <summary>휴대폰이 없나요? PC에서 전체 흐름 보기 (발급기관 · 전화 확인번호 · 시민 앱)</summary>
-  <div class="cols">
-    <section class="col">
-      <h3>① 발급기관 (경찰서 인사·감사 담당)</h3>
-      <div class="panel">
-        <table>
-          <tr><td>기관</td><td id="iss-name"></td></tr>
-          <tr><td>신뢰목록 등록</td><td><span class="tag">행정안전부 관리</span></td></tr>
-          <tr><td>직원</td><td id="emp-name"></td></tr>
-          <tr><td>상태</td><td><span class="tag" id="emp-state">재직</span></td></tr>
-        </table>
-        <button class="warn" id="btn-revoke">퇴직·직무정지 처리(폐지목록 등재)</button>
-        <button class="ghost" id="btn-restore">재직 상태로 되돌리기</button>
-        <hr>
-        <div class="meta">사기범 쪽(비교용)</div>
-        <button class="ghost" id="btn-fake">가짜 '경찰서' QR을 내민다</button>
-        <button class="ghost" id="btn-capture">1분 전에 캡처해 둔 QR을 내민다</button>
-      </div>
-    </section>
-    <section class="col">
-      <h3>② 직원 휴대폰 — 전화로 연락할 때</h3>
-      <div class="phone">
-        <div class="meta">직원이 통화 중 시민에게 1회용 번호를 불러 줍니다</div>
-        <button id="btn-code">전화 확인번호 받기 (60초)</button>
-        <div class="code" id="call-code">— — —</div>
-      </div>
-    </section>
-    <section class="col">
-      <h3>③ 시민 휴대폰 (모바일신분증 앱 › 상대 확인)</h3>
-      <div class="phone">
-        <button id="btn-scan">📷 위 QR 찍기(PC에서 흉내)</button>
-        <div class="meta" style="margin-top:14px">전화 중이라면, 상대에게 확인번호를 불러 달라고 하세요</div>
-        <input id="code-in" inputmode="numeric" maxlength="6" placeholder="6자리">
-        <button class="ghost" id="btn-lookup">확인번호 조회</button>
-        <div class="result" id="result">
-          <div class="big" id="r-big"></div>
-          <div class="msg" id="r-msg"></div>
-          <dl id="r-info"></dl>
-          <div class="act" id="r-act"></div>
-        </div>
-        <button class="ghost" id="btn-say" style="display:none">🔊 소리로 듣기</button>
-      </div>
-    </section>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">거꾸로 신분증<small>시민이 공무원의 신분을 확인하는 사칭 차단 QR · 시연</small></div>
+    <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
   </div>
-</details>
-<p class="demo-note">시연용 모의 환경입니다. 기관 키는 공개된 데모 키이고, 직원·기관 정보는 가상입니다. 실제 모바일신분증·인사시스템과 연동하지 않았습니다. 시민 확인 화면은 휴대폰 브라우저 안에서 서명을 직접 검증합니다(서버로 보내지 않음). 생성형 AI(Anthropic Claude)를 코드 작성 보조에 사용했습니다.</p>
+
+  <section class="scene">
+    <div>
+      <span class="num" id="num"></span>
+      <div class="story" id="story"></div>
+      <p class="do" id="do"></p>
+      <div class="expect" id="expect"></div>
+    </div>
+    <div class="qrbox">
+      <div class="camera">📱 휴대폰 카메라로 찍어 보세요</div>
+      <div class="qr"><img id="qr" alt="휴대폰 카메라로 찍는 QR"></div>
+      <div class="timer"><i id="ttl"></i></div>
+      <div class="tiny" id="ttl-text"></div>
+    </div>
+  </section>
+
+  <div class="onphone">
+    지금 휴대폰으로 이 화면을 보고 계신가요? QR은 <b>다른 화면(PC·태블릿)</b>에 띄워 두고 휴대폰으로 찍는 거예요.
+    다른 화면이 없다면 아래 버튼으로 이 휴대폰에서 바로 확인해 볼 수 있어요.
+    <a id="here" href="#">이 휴대폰에서 바로 확인해 보기</a>
+  </div>
+
+  <div class="nav">
+    <button class="prev" id="prev" hidden>← 이전</button>
+    <button class="next" id="next">다 찍어 봤어요. 다음 →</button>
+  </div>
+
+  <p class="foot">
+    시연용 모의 환경입니다. 경찰서·직원은 가상이고, 기관 키는 공개된 데모 키예요. 휴대폰 확인 화면은 휴대폰 안에서 전자서명을 직접 검사하고, 휴대폰 정보는 어디로도 보내지 않습니다.
+    전화 확인번호·폐지 처리까지 보려면 <a href="full.html">전체 흐름 화면</a>을 여세요. 생성형 AI(Anthropic Claude)를 코드 작성 보조에 사용했습니다.
+  </p>
+</div>
 
 <script type="module">
 import * as P from './protocol.mjs';
 
 const $ = (id) => document.getElementById(id);
 const ALG = { name: 'ECDSA', namedCurve: 'P-256' };
-// 데모 발급기관 키(공개 데모 키). 시민 확인 화면(check.html)은 trust.json 의 공개키로만 검증한다.
 const trustList = await (await fetch('trust.json')).json();
 const jwk = await (await fetch('demo-issuer-key.json')).json();
 const ISS_ID = 'KR-POLICE-SEOUL-GN';
@@ -175,87 +122,82 @@ const fakePhone = await P.createDevice();
 const fakeCred = await P.issueCredential(fakeIssuer, fakePhone, emp);
 const oldPhone = await P.createDevice();
 const oldCred = await P.issueCredential(issuer, oldPhone, oldEmp);
-const revoked = new Set();
-const seen = new Set();
-const server = P.createCallCodeServer();
 const CHECK_URL = new URL('check.html', location.href).href;
 
-$('iss-name').textContent = issuer.name;
-$('emp-name').textContent = `${emp.maskedName} · ${emp.role}`;
-$('emp-card').innerHTML = `<b>직원 휴대폰 화면</b> · ${emp.org}<br>${emp.role} ${emp.maskedName}`;
+const SCENES = [
+  {
+    mode: 'real',
+    story: '<span class="who">진짜 경찰관</span>이 우리 집 문 앞에 왔어요.',
+    do: '경찰관 휴대폰에 뜬 QR이 오른쪽 네모예요. <b>내 휴대폰 카메라</b>로 찍고, 뜨는 링크를 누르세요.',
+    expect: ['ok', '✅', '초록색이 나오면 성공!', '“진짜 직원이에요”'],
+    present: (now) => P.present(cred, phone, { now }),
+  },
+  {
+    mode: 'fake',
+    story: '<span class="fake">가짜 경찰관(사기범)</span>이 그럴듯한 QR을 직접 만들어 왔어요.',
+    do: '이번에도 <b>똑같이 찍어 보세요.</b> 경찰서 이름을 흉내 내도 속지 않아요.',
+    expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 문을 열지 마세요'],
+    present: (now) => P.present(fakeCred, fakePhone, { now }),
+  },
+  {
+    mode: 'capture',
+    story: '사기범이 진짜 경찰관 QR을 <span class="fake">몰래 사진으로 찍어</span> 두었다가 내밀어요.',
+    do: '<b>찍어 보세요.</b> QR은 30초마다 바뀌어서 예전에 찍어 둔 사진은 쓸 수 없어요.',
+    expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 예전에 찍어 둔 QR'],
+    present: (now) => P.present(cred, phone, { now: now - 60 }),
+  },
+  {
+    mode: 'revoked',
+    story: '<span class="fake">이미 그만둔 경찰관</span>이 옛날 신분증으로 찾아왔어요.',
+    do: '<b>찍어 보세요.</b> 그만두면 경찰서가 바로 막아서 더는 통하지 않아요.',
+    expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 그만둔 사람'],
+    present: (now) => P.present(oldCred, oldPhone, { now }),
+  },
+];
 
-let mode = 'real';
+let idx = 0;
 let current = '';
 let issuedAt = 0;
-function drawQR(token) {
+
+function draw(token) {
   const qr = qrcode(0, 'L');
   qr.addData(`${CHECK_URL}#${token}`, 'Byte');
   qr.make();
-  $('qr').src = qr.createDataURL(4, 8);
+  $('qr').src = qr.createDataURL(5, 8);
+  $('here').href = `${CHECK_URL}#${token}`;
 }
 async function refresh() {
   issuedAt = P.nowSec();
-  if (mode === 'real') current = await P.present(cred, phone, { now: issuedAt });
-  if (mode === 'fake') current = await P.present(fakeCred, fakePhone, { now: issuedAt });
-  if (mode === 'capture') current = await P.present(cred, phone, { now: issuedAt - 60 });
-  if (mode === 'revoked') current = await P.present(oldCred, oldPhone, { now: issuedAt });
-  drawQR(current);
+  current = await SCENES[idx].present(issuedAt);
+  draw(current);
 }
-const MODE_TEXT = {
-  real: '진짜 직원 QR',
-  fake: "사기범이 만든 가짜 '경찰서' QR",
-  capture: '1분 전에 캡처해 둔 진짜 QR',
-  revoked: '퇴직자(폐지목록 등재)의 QR',
-};
 function tick() {
   const left = Math.max(0, P.QR_TTL_SEC - (P.nowSec() - issuedAt));
   $('ttl').style.width = `${(left / P.QR_TTL_SEC) * 100}%`;
-  $('ttl-text').textContent = `지금 화면: ${MODE_TEXT[mode]} · ${left}초 뒤 새 QR`;
+  $('ttl-text').textContent = `QR은 ${left}초 뒤에 새로 바뀌어요`;
   if (left === 0) refresh();
 }
-for (const m of Object.keys(MODE_TEXT)) {
-  $(`m-${m}`).onclick = async () => {
-    mode = m;
-    for (const k of Object.keys(MODE_TEXT)) $(`m-${k}`).className = k === m ? 'on' : 'ghost';
-    $('mode-badge').textContent = m === 'real' ? '진짜 직원' : '사칭 시연 중';
-    $('mode-badge').className = m === 'real' ? 'badge' : 'badge bad';
-    await refresh();
-    tick();
-  };
+async function render() {
+  const s = SCENES[idx];
+  $('num').textContent = `장면 ${idx + 1} / ${SCENES.length}`;
+  $('story').innerHTML = s.story;
+  $('do').innerHTML = s.do;
+  const [cls, icon, head, sub] = s.expect;
+  $('expect').className = `expect ${cls}`;
+  $('expect').innerHTML = `<span class="icon">${icon}</span><span>${head}<small>휴대폰에 ${sub}</small></span>`;
+  [...$('dots').children].forEach((d, i) => { d.className = i === idx ? 'on' : i < idx ? 'done' : ''; });
+  $('prev').hidden = idx === 0;
+  $('next').textContent = idx < SCENES.length - 1 ? '다 찍어 봤어요. 다음 →' : '처음부터 다시 하기 ↺';
+  await refresh();
+  tick();
 }
-await refresh();
-tick();
+$('next').onclick = () => { idx = (idx + 1) % SCENES.length; render(); };
+$('prev').onclick = () => { idx = Math.max(0, idx - 1); render(); };
+await render();
 setInterval(tick, 1000);
 
-function show(r) {
-  const box = $('result');
-  box.className = `result ${r.ok ? 'ok' : 'bad'}`;
-  $('r-big').textContent = r.ok ? '✅ 진짜 직원입니다' : '⛔ 확인되지 않았습니다';
-  $('r-msg').textContent = r.message;
-  $('r-info').innerHTML = r.ok
-    ? `<dt>기관</dt><dd>${r.info.org}</dd><dt>직무</dt><dd>${r.info.role}</dd><dt>성명</dt><dd>${r.info.name}</dd>`
-    : '';
-  $('r-act').innerHTML = r.ok
-    ? `더 확인하려면 기관 대표번호 <b>${r.info.officeTel}</b>로 직접 전화하세요. (상대가 알려 준 번호 말고)`
-    : '돈·카드·앱 설치 요구에 응하지 마세요. <b>112</b>에 바로 신고할 수 있습니다.';
-  $('btn-say').style.display = 'block';
-  $('btn-say').onclick = () => speechSynthesis.speak(new SpeechSynthesisUtterance(`${$('r-big').textContent}. ${r.message}`));
-}
-const revokedNow = () => new Set([...revoked, `${ISS_ID}:${oldEmp.id}`]);
-
-$('btn-scan').onclick = async () => show(await P.verify(current, { trustList, revoked: revokedNow(), seen }));
-$('btn-fake').onclick = async () => show(await P.verify(await P.present(fakeCred, fakePhone), { trustList, revoked: revokedNow(), seen }));
-$('btn-capture').onclick = async () => show(await P.verify(await P.present(cred, phone, { now: P.nowSec() - 60 }), { trustList, revoked: revokedNow(), seen }));
-$('btn-revoke').onclick = async () => { revoked.add(`${issuer.id}:${emp.id}`); $('emp-state').textContent = '폐지'; $('emp-state').className = 'tag off'; };
-$('btn-restore').onclick = () => { revoked.clear(); $('emp-state').textContent = '재직'; $('emp-state').className = 'tag'; };
-$('btn-code').onclick = async () => {
-  const r = await P.verify(await P.present(cred, phone), { trustList, revoked: revokedNow() });
-  $('call-code').textContent = r.ok ? await server.issue(r.info) : '발급 불가';
-};
-$('btn-lookup').onclick = () => show(server.lookup($('code-in').value.trim(), 'this-citizen'));
-
 // 자동 시험용
-window.__demo = { url: () => `${CHECK_URL}#${current}`, mode: (m) => $(`m-${m}`).click() };
+window.__demo = { url: () => `${CHECK_URL}#${current}`, mode: (m) => { idx = SCENES.findIndex((s) => s.mode === m); return render(); } };
 </script>
 </body>
 </html>
