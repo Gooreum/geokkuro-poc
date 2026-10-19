@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#193a5b">
-  <meta name="description" content="거꾸로 신분증 — 내 휴대폰에서 상대의 직무 신분을 확인하는 서비스 시연">
+  <meta name="description" content="내 휴대폰에서 만난 직원과 전화한 사람의 직무 신분을 확인합니다.">
   <title>직무 신분 확인 결과 · 상대 확인</title>
   <link rel="stylesheet" href="./style.css">
   <script defer src="./data.js"></script>
@@ -17,10 +17,10 @@
   <header class="demo-strip" aria-label="시연 장면 안내">
     <div class="strip-inner">
       <span class="demo-tag">시연</span><span id="scene-count">장면 1/9</span>
-      <span class="strip-task" id="scene-task">상대 확인을 시작해 보세요</span>
-      <div class="strip-controls"><button id="previous" class="strip-button" aria-label="이전 장면">←</button><button id="next" class="strip-button">다음 <span aria-hidden="true">→</span></button></div>
+      <span class="strip-task" id="scene-task">시작하기를 눌러 보세요</span>
+      <button id="guide-shortcut" class="strip-button shortcut" data-action="lock-preview" hidden>잠금까지 보기</button>
+      <div class="strip-controls"><button id="previous" class="strip-button" aria-label="이전 장면">←</button><button id="next" class="strip-button">다음 →</button></div>
     </div>
-    <div class="scene-progress"><span id="scene-progress"></span></div>
   </header>
   <div class="workspace">
     <div class="workspace-label"><span class="wordmark">거꾸로 신분증<span class="wordmark-dot"></span></span><span>내가 확인하는, 상대의 신분</span></div>

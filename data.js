@@ -7,7 +7,7 @@ window.DEMO_DATA = {
     }
   },
   "revoked": [
-    "KR-POLICE-SEOUL-GN:E2025-0099"
+    "KR-POLICE-SEOUL-GN:E2019-0231"
   ],
   "publicDemoIssuerKey": {
     "key_ops": [
