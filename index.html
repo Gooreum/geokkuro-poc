@@ -1,274 +1,43 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>거꾸로 신분증 — 휴대폰으로 찍어 보세요</title>
-<script src="vendor/qrcode.js"></script>
-<style>
-  :root { --bg:#f4f6f9; --ink:#14202e; --sub:#5a6676; --line:#dde3ea; --blue:#1f5fbf; --ok:#0f8a4b; --okbg:#e3f6ea; --bad:#d0261f; --badbg:#fdeceb; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
-  .wrap { max-width:1040px; margin:0 auto; padding:24px max(16px, env(safe-area-inset-right,0px)) 32px max(16px, env(safe-area-inset-left,0px)); }
-  .top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-  .brand { font-weight:800; font-size:18px; }
-  .brand small { display:block; font-weight:500; font-size:13px; color:var(--sub); margin-top:2px; }
-  .dots { display:flex; gap:8px; }
-  .dots i { width:26px; height:8px; border-radius:4px; background:#d5dce5; }
-  .dots i.on { background:var(--blue); }
-  .dots i.done { background:#8fb0e3; }
-
-  .scene { margin-top:20px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px; align-items:center;
-           background:#fff; border:1px solid var(--line); border-radius:28px; padding:32px; box-shadow:0 10px 30px rgba(20,32,46,.07); }
-  .num { display:inline-block; font-size:15px; font-weight:800; color:var(--blue); background:#e8f0fc; padding:6px 12px; border-radius:999px; }
-  .story { font-size:30px; font-weight:800; line-height:1.35; margin:14px 0 12px; text-wrap:balance; }
-  .story .who { color:var(--blue); }
-  .story .fake { color:var(--bad); }
-  .do { font-size:22px; line-height:1.5; margin:18px 0 0; }
-  .do b { background:#fff3b0; padding:0 4px; }
-  .expect { margin-top:22px; display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:18px; font-size:20px; font-weight:800; }
-  .expect.ok { background:var(--okbg); color:var(--ok); }
-  .expect.bad { background:var(--badbg); color:var(--bad); }
-  .expect .icon { font-size:38px; line-height:1; }
-  .expect small { display:block; font-size:15px; font-weight:600; color:var(--ink); margin-top:3px; }
-
-  .qrbox { text-align:center; }
-  .camera { font-size:20px; font-weight:800; margin-bottom:10px; }
-  .qr { display:inline-block; padding:14px; background:#fff; border:4px dashed var(--blue); border-radius:22px; }
-  .qr img { display:block; width:min(360px, 100%); height:auto; aspect-ratio:1; image-rendering:pixelated; }
-  .timer { margin:10px auto 0; width:min(390px,100%); height:6px; background:#e3e8ee; border-radius:3px; overflow:hidden; }
-  .timer i { display:block; height:100%; background:var(--blue); transition:width 1s linear; }
-  .callcard { margin:0 auto 14px; width:min(390px,100%); background:#14202e; color:#fff; border-radius:22px; padding:18px 18px 16px; }
-  .callcard[hidden] { display:none; }
-  .calltop { font-size:15px; font-weight:700; opacity:.85; }
-  .callsay { font-size:15px; margin-top:12px; opacity:.85; }
-  .callcode { font-size:52px; font-weight:900; letter-spacing:8px; margin-top:4px; }
-  .callcard .tiny { color:#c9d3df; }
-  .callmode .qr img { width:min(200px, 100%); }
-  .tiny { font-size:13px; color:var(--sub); margin-top:6px; }
-
-  .nav { display:flex; justify-content:space-between; gap:12px; margin-top:18px; }
-  button { font:inherit; font-size:20px; font-weight:800; border:0; border-radius:16px; padding:16px 26px; cursor:pointer; }
-  .next { background:var(--blue); color:#fff; flex:1; max-width:420px; margin-left:auto; }
-  .prev { background:#e6ebf1; color:var(--ink); }
-  .prev[hidden] { display:none; }
-
-  .onphone { display:none; margin-top:18px; padding:18px; border-radius:18px; background:#fff3d6; font-size:17px; line-height:1.55; }
-  .onphone a { display:block; margin-top:10px; text-align:center; background:var(--ink); color:#fff; text-decoration:none; font-weight:800; padding:14px; border-radius:14px; }
-  .foot { margin-top:22px; font-size:13px; color:var(--sub); line-height:1.6; }
-  .foot a { color:var(--blue); }
-
-  @media (max-width:820px) {
-    .scene { grid-template-columns:1fr; padding:22px; gap:18px; }
-    .story { font-size:24px; }
-    .do { font-size:19px; }
-    .qrbox { order:-1; }
-    .next { max-width:none; }
-  }
-  @media (hover:none) and (max-width:820px) { .onphone { display:block; } }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#193a5b">
+  <meta name="description" content="거꾸로 신분증 — 내 휴대폰에서 상대의 직무 신분을 확인하는 서비스 시연">
+  <title>상대 확인 · 거꾸로 신분증</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./data.js"></script>
+  <script defer src="./protocol.browser.js"></script>
+  <script defer src="./vendor/qrcode.js"></script>
+  <script defer src="./app.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div class="brand">거꾸로 신분증<small>시민이 공무원의 신분을 확인하는 사칭 차단 QR · 시연</small></div>
-    <div class="dots" id="dots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-  </div>
-
-  <section class="scene">
-    <div>
-      <span class="num" id="num"></span>
-      <div class="story" id="story"></div>
-      <p class="do" id="do"></p>
-      <div class="expect" id="expect"></div>
+  <a class="skip" href="#app-content">본문으로 건너뛰기</a>
+  <header class="demo-strip" aria-label="시연 장면 안내">
+    <div class="strip-inner">
+      <span class="demo-tag">시연</span><span id="scene-count">장면 1/9</span>
+      <span class="strip-task" id="scene-task">상대 확인을 시작해 보세요</span>
+      <div class="strip-controls"><button id="previous" class="strip-button" aria-label="이전 장면">←</button><button id="next" class="strip-button">다음 <span aria-hidden="true">→</span></button></div>
     </div>
-    <div class="qrbox" id="qrbox">
-      <div class="callcard" id="callcard" hidden>
-        <div class="calltop">📞 통화 중 · <span id="caller"></span></div>
-        <div class="callsay">상대가 불러 준 확인번호</div>
-        <div class="callcode" id="callcode"></div>
-        <div class="tiny" id="calltip"></div>
-      </div>
-      <div class="camera" id="camera">📱 휴대폰 카메라로 찍어 보세요</div>
-      <div class="qr"><img id="qr" alt="휴대폰 카메라로 찍는 QR"></div>
-      <div class="timer"><i id="ttl"></i></div>
-      <div class="tiny" id="ttl-text"></div>
+    <div class="scene-progress"><span id="scene-progress"></span></div>
+  </header>
+  <div class="workspace">
+    <div class="workspace-label"><span class="wordmark">거꾸로 신분증<span class="wordmark-dot"></span></span><span>내가 확인하는, 상대의 신분</span></div>
+    <div class="stage" id="stage">
+      <div id="employee-desktop" class="employee-desktop"></div>
+      <section class="phone" id="phone" aria-label="시민 모바일신분증">
+        <div class="device-status" aria-hidden="true"><span id="clock">09:41</span><span class="device-island"></span><span class="signal">▮▮▮ <span class="battery"></span></span></div>
+        <header class="appbar" id="appbar"></header>
+        <main id="app-content" tabindex="-1"><div class="loading-view"><div class="skeleton"></div><div class="skeleton"></div><p>안전한 확인을 준비하고 있어요.</p></div></main>
+        <nav class="tabbar" id="tabbar" aria-label="앱 메뉴"></nav>
+      </section>
+      <aside id="scene-panel" class="scene-panel" aria-label="장면 설명"></aside>
     </div>
-  </section>
-
-  <div class="onphone">
-    지금 휴대폰으로 이 화면을 보고 계신가요? QR은 <b>다른 화면(PC·태블릿)</b>에 띄워 두고 휴대폰으로 찍는 거예요.
-    다른 화면이 없다면 아래 버튼으로 이 휴대폰에서 바로 확인해 볼 수 있어요.
-    <a id="here" href="#">이 휴대폰에서 바로 확인해 보기</a>
+    <footer class="disclaimer">시연용 모의 데이터 · 실제 모바일신분증·인사시스템과 연동하지 않음</footer>
   </div>
-
-  <div class="nav">
-    <button class="prev" id="prev" hidden>← 이전</button>
-    <button class="next" id="next">다 찍어 봤어요. 다음 →</button>
-  </div>
-
-  <p class="foot">
-    시연용 모의 환경입니다. 경찰서·직원은 가상이고, 기관 키는 공개된 데모 키예요. 휴대폰 확인 화면은 휴대폰 안에서 전자서명을 직접 검사하고, 휴대폰 정보는 어디로도 보내지 않습니다.
-    전화 확인번호·폐지 처리까지 보려면 <a href="full.html">전체 흐름 화면</a>을 여세요. 생성형 AI(Anthropic Claude)를 코드 작성 보조에 사용했습니다.
-  </p>
-</div>
-
-<script type="module">
-import * as P from './protocol.mjs';
-import * as C from './call.mjs';
-
-const $ = (id) => document.getElementById(id);
-const ALG = { name: 'ECDSA', namedCurve: 'P-256' };
-const trustList = await (await fetch('trust.json')).json();
-const jwk = await (await fetch('demo-issuer-key.json')).json();
-const ISS_ID = 'KR-POLICE-SEOUL-GN';
-const issuer = {
-  id: ISS_ID, name: trustList[ISS_ID].name,
-  keys: { privateKey: await crypto.subtle.importKey('jwk', jwk, ALG, false, ['sign']) },
-  pubRaw: P.unb64u(trustList[ISS_ID].pub),
-};
-const fakeIssuer = await P.createIssuer(ISS_ID, '서울강남경찰서');
-const emp = { id: 'E2026-0412', org: '서울강남경찰서 수사과', role: '수사관(방문 조사)', maskedName: '김○수', officeTel: '02-000-0000' };
-const oldEmp = { id: 'E2025-0099', org: '서울강남경찰서 수사과', role: '수사관(퇴직)', maskedName: '이○호', officeTel: '02-000-0000' };
-const phone = await P.createDevice();
-const cred = await P.issueCredential(issuer, phone, emp);
-const fakePhone = await P.createDevice();
-const fakeCred = await P.issueCredential(fakeIssuer, fakePhone, emp);
-const oldPhone = await P.createDevice();
-const oldCred = await P.issueCredential(issuer, oldPhone, oldEmp);
-const CHECK_URL = new URL('check.html', location.href).href;
-
-const CALL_KEY = (await (await fetch('call-key.json')).json()).key;
-const FAKE_CODE = String(100000 + Math.floor(Math.random() * 900000));
-const SCENES = [
-  {
-    mode: 'call', group: '📞 전화가 왔을 때',
-    story: '📞 <span class="who">"서울강남경찰서 김○수 수사관입니다"</span> 하고 진짜 경찰관이 전화했어요.',
-    do: '① 오른쪽 아래 QR을 찍어 <b>확인번호 입력 화면</b>을 여세요.<br>② 수사관이 불러 준 <b>큰 숫자 6자리</b>를 넣으세요.',
-    expect: ['ok', '✅', '초록색이 나오면 성공!', '“진짜 직원이에요”'],
-    caller: '서울강남경찰서 김○수 수사관',
-    code: async () => C.issue(CALL_KEY, 'E2026-0412'),
-    tip: '진짜 직원은 기관에서 받은 1회용 번호를 바로 불러 줄 수 있어요.',
-  },
-  {
-    mode: 'callfake', group: '📞 전화가 왔을 때',
-    story: '📞 <span class="fake">"검찰청입니다. 당신 계좌가 범죄에 쓰였어요"</span> 하고 사기 전화가 왔어요.',
-    do: '"확인번호를 불러 주세요"라고 하면, 사기범은 번호를 받을 수 없어서 <b>아무 숫자나 지어내요.</b> 그 숫자를 넣어 보세요.',
-    expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 전화를 끊으세요'],
-    caller: '자칭 서울중앙지검 수사관',
-    code: async () => ({ code: FAKE_CODE, left: null }),
-    tip: '사기범이 지어낸 번호예요. 기관에 등록된 번호가 아니에요.',
-  },
-  {
-    mode: 'real', group: '🚪 직접 만났을 때',
-    story: '<span class="who">진짜 경찰관</span>이 우리 집 문 앞에 왔어요.',
-    do: '경찰관 휴대폰에 뜬 QR이 오른쪽 네모예요. <b>내 휴대폰 카메라</b>로 찍고, 뜨는 링크를 누르세요.',
-    expect: ['ok', '✅', '초록색이 나오면 성공!', '“진짜 직원이에요”'],
-    present: (now) => P.present(cred, phone, { now }),
-  },
-  {
-    mode: 'fake', group: '🚪 직접 만났을 때',
-    story: '<span class="fake">가짜 경찰관(사기범)</span>이 그럴듯한 QR을 직접 만들어 왔어요.',
-    do: '이번에도 <b>똑같이 찍어 보세요.</b> 경찰서 이름을 흉내 내도 속지 않아요.',
-    expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 문을 열지 마세요'],
-    present: (now) => P.present(fakeCred, fakePhone, { now }),
-  },
-  {
-    mode: 'capture', group: '🚪 직접 만났을 때',
-    story: '사기범이 진짜 경찰관 QR을 <span class="fake">몰래 사진으로 찍어</span> 두었다가 내밀어요.',
-    do: '<b>찍어 보세요.</b> QR은 30초마다 바뀌어서 예전에 찍어 둔 사진은 쓸 수 없어요.',
-    expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 예전에 찍어 둔 QR'],
-    present: (now) => P.present(cred, phone, { now: now - 60 }),
-  },
-  {
-    mode: 'revoked', group: '🚪 직접 만났을 때',
-    story: '<span class="fake">이미 그만둔 경찰관</span>이 옛날 신분증으로 찾아왔어요.',
-    do: '<b>찍어 보세요.</b> 그만두면 경찰서가 바로 막아서 더는 통하지 않아요.',
-    expect: ['bad', '⛔', '빨간색이 나오면 성공!', '“가짜일 수 있어요!” — 그만둔 사람'],
-    present: (now) => P.present(oldCred, oldPhone, { now }),
-  },
-];
-
-let idx = 0;
-let current = '';
-let issuedAt = 0;
-
-function draw(token) {
-  const qr = qrcode(0, 'L');
-  // QR 마다 주소(?q=)를 다르게 해서 폰이 찍을 때마다 결과 페이지를 새로 연다
-  qr.addData(`${CHECK_URL}?q=${token.slice(-8)}#${token}`, 'Byte');
-  qr.make();
-  $('qr').src = qr.createDataURL(5, 8);
-  $('here').href = `${CHECK_URL}?q=${token.slice(-8)}#${token}`;
-}
-const isCall = () => Boolean(SCENES[idx].code);
-async function refresh() {
-  issuedAt = P.nowSec();
-  const s = SCENES[idx];
-  if (s.code) {
-    // 전화 장면: QR 은 '확인번호 입력 화면'을 연다. 큰 숫자는 직원(또는 사기범)이 불러 주는 번호.
-    current = 'call';
-    const qr = qrcode(0, 'M');
-    // 장면마다 주소를 다르게 해서, 폰이 결과 화면을 열어 둔 채 다시 찍어도 입력 화면이 새로 열린다
-    const callUrl = `${CHECK_URL}?q=call${idx}${issuedAt % 100000}#call`;
-    qr.addData(callUrl, 'Byte');
-    qr.make();
-    $('qr').src = qr.createDataURL(6, 4);
-    $('here').href = callUrl;
-    const { code } = await s.code();
-    $('callcode').textContent = `${code.slice(0, 3)} ${code.slice(3)}`;
-    return;
-  }
-  current = await s.present(issuedAt);
-  draw(current);
-}
-function tick() {
-  if (isCall()) {
-    const s = SCENES[idx];
-    if (s.mode === 'call') {
-      const left = C.CALL_TTL_SEC - (P.nowSec() % C.CALL_TTL_SEC);
-      $('ttl').style.width = `${(left / C.CALL_TTL_SEC) * 100}%`;
-      $('ttl-text').textContent = '';
-      $('calltip').textContent = `${s.tip} · ${left}초 뒤 새 번호`;
-      if (left === C.CALL_TTL_SEC) refresh();
-    } else {
-      $('ttl').style.width = '0%';
-      $('ttl-text').textContent = '';
-      $('calltip').textContent = s.tip;
-    }
-    return;
-  }
-  const left = Math.max(0, P.QR_TTL_SEC - (P.nowSec() - issuedAt));
-  $('ttl').style.width = `${(left / P.QR_TTL_SEC) * 100}%`;
-  $('ttl-text').textContent = `QR은 ${left}초 뒤에 새로 바뀌어요`;
-  if (left === 0) refresh();
-}
-async function render() {
-  const s = SCENES[idx];
-  $('num').textContent = `장면 ${idx + 1} / ${SCENES.length} · ${s.group}`;
-  const call = Boolean(s.code);
-  $('callcard').hidden = !call;
-  $('caller').textContent = s.caller ?? '';
-  $('qrbox').className = call ? 'qrbox callmode' : 'qrbox';
-  $('camera').textContent = call ? '📱 이 QR을 찍으면 확인번호 입력 화면이 열려요' : '📱 휴대폰 카메라로 찍어 보세요';
-  $('story').innerHTML = s.story;
-  $('do').innerHTML = s.do;
-  const [cls, icon, head, sub] = s.expect;
-  $('expect').className = `expect ${cls}`;
-  $('expect').innerHTML = `<span class="icon">${icon}</span><span>${head}<small>휴대폰에 ${sub}</small></span>`;
-  [...$('dots').children].forEach((d, i) => { d.className = i === idx ? 'on' : i < idx ? 'done' : ''; });
-  $('prev').hidden = idx === 0;
-  $('next').textContent = idx < SCENES.length - 1 ? '다 찍어 봤어요. 다음 →' : '처음부터 다시 하기 ↺';
-  await refresh();
-  tick();
-}
-$('next').onclick = () => { idx = (idx + 1) % SCENES.length; render(); };
-$('prev').onclick = () => { idx = Math.max(0, idx - 1); render(); };
-await render();
-setInterval(tick, 1000);
-
-// 자동 시험용
-window.__demo = { url: () => (current === 'call' ? $('here').href : `${CHECK_URL}?q=${current.slice(-8)}#${current}`), mode: (m) => { idx = SCENES.findIndex((s) => s.mode === m); return render(); } };
-</script>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="sheet" class="sheet" aria-labelledby="sheet-title"><div id="sheet-content"></div></dialog>
+  <noscript>상대 확인에는 JavaScript가 필요합니다. 브라우저 설정에서 JavaScript를 켜 주세요.</noscript>
 </body>
 </html>
