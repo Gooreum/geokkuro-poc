@@ -51,7 +51,7 @@
 - `vendor/`: qrcode-generator와 MIT 라이선스.
 - `LICENSE-icons.txt`: 이전 제작물에서 재사용한 자체 SVG 경로의 MIT 라이선스.
 - `verify.mjs`, `verify-ui.cjs`: 프로토콜 회귀와 DOM 상태 검사.
-- `shot.mjs`: 바깥 Claude가 실행할 브라우저 촬영·assertion 스크립트.
+- `shot.mjs`: 브라우저 촬영·assertion 스크립트(`PW_ROOT=<playwright 폴더> node poc/web/shot.mjs`, 공개 주소는 `DEMO_URL=` 로).
 
 실폰 QR에는 상대경로로 계산한 `check.html#<서명 토큰>`이 들어갑니다. file://에서 제시한 QR은 공개 경로 `https://gooreum.github.io/geokkuro-poc/check.html`로 연결됩니다. HTTPS 하위 경로에서 배포하면 현재 경로의 check.html을 사용합니다. 새 파일의 GitHub Pages 반영은 아직 수행하지 않았습니다.
 
@@ -92,7 +92,7 @@ DOM_ROOT=/path/to/node_modules node poc/web/verify-ui.cjs
 
 ## 바깥 Claude의 브라우저 촬영
 
-요청대로 이 단계에서는 **shot.mjs를 실행하지 않았습니다**. 실제 렌더링의 가로 넘침·footer 위치·초점·브라우저 뒤로가기·음성·공유·실폰 카메라는 후속 실기기/브라우저 확인이 필요합니다. DOM 테스트의 ‘별도 휴대폰’은 서로 독립된 DOM·저장소를 뜻하며 실제 휴대폰 촬영 결과가 아닙니다.
+2026-10-20 촬영 결과: 로컬(file://)과 공개 주소(https://gooreum.github.io/geokkuro-poc/) 모두 58장, `failures: 0`. 남은 확인: 실제 렌더링 외의 가로 넘침·footer 위치·초점·브라우저 뒤로가기·음성·공유·실폰 카메라는 후속 실기기/브라우저 확인이 필요합니다. DOM 테스트의 ‘별도 휴대폰’은 서로 독립된 DOM·저장소를 뜻하며 실제 휴대폰 촬영 결과가 아닙니다.
 
 ```sh
 PW_ROOT=/absolute/path/to/node_modules node poc/web/shot.mjs
@@ -100,7 +100,7 @@ PW_ROOT=/absolute/path/to/node_modules node poc/web/shot.mjs
 DEMO_URL=https://gooreum.github.io/geokkuro-poc/index.html PW_ROOT=/absolute/path/to/node_modules node poc/web/shot.mjs
 ```
 
-요청한 로딩 방식 `createRequire(process.env.PW_ROOT + '/')('playwright')`을 사용합니다. 장면별 390×844 / 1280×800 촬영, 초기 화면 `demo-<장면>-<폭>.png`, 번호 채움 `-filled`, 독립 QR 검증 `-check`, 결과 `-result`, 신고 `-reported`, 잠금 `-locked`, 카메라 거부 `-camera-denied`, 오프라인 번호/QR, 발급 폼/폐지 확인/관리자 신고를 `../../_codex/shots/`에 저장합니다. `demo-checks.json`은 가로 넘침·desktop footer 잘림·안내 한 줄·진행점 9개 배치·상태 assertion·런타임 오류를 기록합니다. 잠금 지속을 새로고침으로 확인한 뒤, 테스트에서 저장된 잠금 종료 시각을 과거로 설정하여 만료 복구를 검사합니다. 이후 장면 8을 잠금에 가리지 않고 촬영하며 신고·확인 기록은 보존합니다. 기존 shots는 이전 회차 결과입니다. 새 촬영 전에는 ROUND 3 검증 자료로 사용하지 마세요. 새 `demo-checks.json`은 `round: 3`을 기록하며, 실행하지 않았으므로 `failures: 0` 달성 여부는 아직 확인하지 않았습니다.
+요청한 로딩 방식 `createRequire(process.env.PW_ROOT + '/')('playwright')`을 사용합니다. 장면별 390×844 / 1280×800 촬영, 초기 화면 `demo-<장면>-<폭>.png`, 번호 채움 `-filled`, 독립 QR 검증 `-check`, 결과 `-result`, 신고 `-reported`, 잠금 `-locked`, 카메라 거부 `-camera-denied`, 오프라인 번호/QR, 발급 폼/폐지 확인/관리자 신고를 `../../_codex/shots/`에 저장합니다. `demo-checks.json`은 가로 넘침·desktop footer 잘림·안내 한 줄·진행점 9개 배치·상태 assertion·런타임 오류를 기록합니다. 잠금 지속을 새로고침으로 확인한 뒤, 테스트에서 저장된 잠금 종료 시각을 과거로 설정하여 만료 복구를 검사합니다. 이후 장면 8을 잠금에 가리지 않고 촬영하며 신고·확인 기록은 보존합니다.
 
 ## 모의 범위
 
